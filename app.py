@@ -111,23 +111,44 @@ predicciones = []
 for estado in df_grouped["Estado del Sistema"].unique():
     df_estado = df_grouped[df_grouped["Estado del Sistema"] == estado].copy()
     df_estado = df_estado.dropna(subset=["Cantidad_Suavizada"])
-    
-    if len(df_estado) > 1:
-        X = np.array(range(len(df_estado))).reshape(-1, 1)
-        y = df_estado["Cantidad_Suavizada"].values
-        model = LinearRegression()
-        model.fit(X, y)
-        
-        future_dates = pd.date_range(start=df_estado["Fecha"].max(), periods=pred_horizonte, freq="M")
-        X_future = np.array(range(len(df_estado), len(df_estado) + pred_horizonte)).reshape(-1, 1)
-        y_pred = model.predict(X_future)
-        
-        df_pred = pd.DataFrame({"Fecha": future_dates, "Estado del Sistema": estado, "Cantidad_Suavizada": y_pred})
-        predicciones.append(df_pred)
 
-df_pred_final = pd.concat([df_grouped] + predicciones, ignore_index=True)
-st.plotly_chart(px.line(df_pred_final, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Predicción de Estados del Sistema", markers=True), use_container_width=True)
-st.write("Este gráfico presenta la predicción de la cantidad de eventos por estado del sistema en los próximos meses.")
+    # ⚠️ Verificar si hay suficientes datos para predecir
+    if len(df_estado) < 5:
+        st.warning(f"⚠️ No hay suficientes datos para predecir el estado '{estado}'. Se necesitan al menos 5 registros.")
+        continue  # Saltar este estado y pasar al siguiente
+
+    # 🔹 Preparar los datos para la regresión lineal
+    X = np.arange(len(df_estado)).reshape(-1, 1)
+    y = df_estado["Cantidad_Suavizada"].values
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # 🔹 Generar predicciones para el futuro
+    future_dates = pd.date_range(start=df_estado["Fecha"].max(), periods=pred_horizonte, freq="M")
+    X_future = np.arange(len(df_estado), len(df_estado) + pred_horizonte).reshape(-1, 1)
+    y_pred = model.predict(X_future)
+
+    # 🔹 Crear DataFrame con predicciones
+    df_pred = pd.DataFrame({
+        "Fecha": future_dates,
+        "Estado del Sistema": estado,
+        "Cantidad_Suavizada": y_pred
+    })
+    predicciones.append(df_pred)
+
+# 📌 Combinar datos originales y predicciones
+if predicciones:
+    df_pred_final = pd.concat([df_grouped] + predicciones, ignore_index=True)
+
+    # 🔹 Graficar predicciones
+    st.plotly_chart(
+        px.line(df_pred_final, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", 
+                title="📈 Predicción de Estados del Sistema", markers=True),
+        use_container_width=True
+    )
+    st.write("Este gráfico presenta la predicción de la cantidad de eventos por estado del sistema en los próximos meses.")
+else:
+    st.warning("⚠️ No hay suficientes datos en ninguno de los estados para generar predicciones.")
 
 # 📌 Predicción de Temperatura Crítica
 st.subheader("🌡️ Predicción de Temperatura Crítica")
