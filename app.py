@@ -17,7 +17,7 @@ st.set_page_config(page_title=" Tablero de Monitoreo en Streamlit para la Gesti�
 # Ruta de salud para App Runner
 if st.query_params.get("health") == "1":
     st.write("OK")
-    st.stop()
+    exit(0)  # O usar return si está en una función
     
 # 📢 Título del tablero
 st.title("📊  Tablero de Monitoreo en Streamlit para la Gestión de Infraestructura TI")
