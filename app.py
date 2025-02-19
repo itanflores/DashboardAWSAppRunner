@@ -143,48 +143,13 @@ if "Uso CPU (%)" in df_filtrado.columns and "Temperatura (°C)" in df_filtrado.c
         model_temp = RandomForestRegressor(n_estimators=100, random_state=42)
         model_temp.fit(X_scaled, y)
 
-        # 🔹 Generar nuevos valores de CPU y Carga de Red en un DataFrame
+        # 🔹 Generar predicciones con valores normalizados
         future_data = pd.DataFrame({
             "Uso CPU (%)": np.linspace(X["Uso CPU (%)"].min(), X["Uso CPU (%)"].max(), num=12),
             "Carga de Red (MB/s)": np.linspace(X["Carga de Red (MB/s)"].min(), X["Carga de Red (MB/s)"].max(), num=12)
         })
 
-        # 🔹 Transformar datos futuros con el mismo `StandardScaler`
-        future_data_scaled = scaler.transform(future_data)
-        future_temp_pred = model_temp.predict(future_data_scaled)
-
-        df_future_temp = pd.DataFrame({
-            "Fecha": pd.date_range(start=df_temp["Fecha"].max(), periods=12, freq="M"),
-            "Temperatura Predicha (°C)": future_temp_pred
-        })
-
-        # 🔹 Graficar predicciones
-        st.plotly_chart(px.line(df_future_temp, x="Fecha", y="Temperatura Predicha (°C)", 
-                                title="📈 Predicción de Temperatura Crítica", markers=True), use_container_width=True)
-        st.write("Este gráfico predice la temperatura crítica en función del uso de CPU y la carga de red.")
-
-# 📌 Predicción de Temperatura Crítica con normalización de datos
-st.subheader("🌡️ Predicción de Temperatura Crítica")
-if "Uso CPU (%)" in df_filtrado.columns and "Temperatura (°C)" in df_filtrado.columns:
-    df_temp = df_filtrado[["Fecha", "Uso CPU (%)", "Carga de Red (MB/s)", "Temperatura (°C)"]].dropna()
-
-    # ⚠️ Verificar que haya datos suficientes
-    if df_temp.shape[0] < 10:
-        st.warning("⚠️ No hay suficientes datos para predecir la temperatura crítica.")
-    else:
-        X = df_temp[["Uso CPU (%)", "Carga de Red (MB/s)"]]
-        y = df_temp["Temperatura (°C)"]
-
-        # 🔹 Normalizar datos
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        # 🔹 Entrenar modelo
-        model_temp = RandomForestRegressor(n_estimators=100, random_state=42)
-        model_temp.fit(X_scaled, y)
-
-        # 🔹 Generar predicciones con valores normalizados
-        future_data = np.linspace(X.min(), X.max(), num=12)
+        # 🔹 Transformar datos futuros con `StandardScaler`
         future_data_scaled = scaler.transform(future_data)
         future_temp_pred = model_temp.predict(future_data_scaled)
 
