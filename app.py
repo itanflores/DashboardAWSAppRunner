@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 import os
@@ -37,15 +38,22 @@ if not os.path.exists(LOCAL_FILE):
         st.stop()
 
 # 📌 Leer dataset
-# 📌 Leer dataset con manejo de errores
+# 📌 Leer dataset con manejo de errores# 📌 Leer dataset con manejo de errores y validación de columnas
 try:
     df = pd.read_csv(LOCAL_FILE)
     df.columns = df.columns.str.strip()
     df['Fecha'] = pd.to_datetime(df['Fecha'], errors="coerce")
+
+    # ⚠️ Verificar que las columnas esenciales estén presentes
+    required_columns = {"Fecha", "Estado del Sistema", "Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)", "Temperatura (°C)"}
+    missing_columns = required_columns - set(df.columns)
+    if missing_columns:
+        st.error(f"❌ Error: Faltan las siguientes columnas en el dataset: {', '.join(missing_columns)}")
+        st.stop()
+
 except Exception as e:
     st.error(f"❌ Error al leer el dataset: {e}")
     st.stop()
-
 
 # 📌 Configuración de Streamlit en App Runner
 if __name__ == "__main__":
@@ -87,6 +95,13 @@ with col1:
 with col2:
     st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
     st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
+
+    # 📌 Verificar si df_grouped tiene datos antes de graficar
+if df_grouped.empty:
+    st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
+else:
+    st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", 
+                            color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
     
     # Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
     st.plotly_chart(px.scatter(
@@ -150,20 +165,41 @@ if predicciones:
 else:
     st.warning("⚠️ No hay suficientes datos en ninguno de los estados para generar predicciones.")
 
-# 📌 Predicción de Temperatura Crítica
+# 📌 Predicción de Temperatura Crítica con normalización de datos
 st.subheader("🌡️ Predicción de Temperatura Crítica")
 if "Uso CPU (%)" in df_filtrado.columns and "Temperatura (°C)" in df_filtrado.columns:
     df_temp = df_filtrado[["Fecha", "Uso CPU (%)", "Carga de Red (MB/s)", "Temperatura (°C)"]].dropna()
-    X = df_temp[["Uso CPU (%)", "Carga de Red (MB/s)"]]
-    y = df_temp["Temperatura (°C)"]
-    model_temp = RandomForestRegressor(n_estimators=100, random_state=42)
-    model_temp.fit(X, y)
-    
-    future_data = pd.DataFrame({"Uso CPU (%)": np.linspace(X["Uso CPU (%)"].min(), X["Uso CPU (%)"].max(), num=12), "Carga de Red (MB/s)": np.linspace(X["Carga de Red (MB/s)"].min(), X["Carga de Red (MB/s)"].max(), num=12)})
-    future_temp_pred = model_temp.predict(future_data)
-    df_future_temp = pd.DataFrame({"Fecha": pd.date_range(start=df_temp["Fecha"].max(), periods=12, freq="M"), "Temperatura Predicha (°C)": future_temp_pred})
-    st.plotly_chart(px.line(df_future_temp, x="Fecha", y="Temperatura Predicha (°C)", title="📈 Predicción de Temperatura Crítica", markers=True), use_container_width=True)
-    st.write("Este gráfico predice la temperatura crítica en función del uso de CPU y la carga de red.")
+
+    # ⚠️ Verificar que haya datos suficientes
+    if df_temp.shape[0] < 10:
+        st.warning("⚠️ No hay suficientes datos para predecir la temperatura crítica.")
+    else:
+        X = df_temp[["Uso CPU (%)", "Carga de Red (MB/s)"]]
+        y = df_temp["Temperatura (°C)"]
+
+        # 🔹 Normalizar datos
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # 🔹 Entrenar modelo
+        model_temp = RandomForestRegressor(n_estimators=100, random_state=42)
+        model_temp.fit(X_scaled, y)
+
+        # 🔹 Generar predicciones con valores normalizados
+        future_data = np.linspace(X.min(), X.max(), num=12)
+        future_data_scaled = scaler.transform(future_data)
+        future_temp_pred = model_temp.predict(future_data_scaled)
+
+        df_future_temp = pd.DataFrame({
+            "Fecha": pd.date_range(start=df_temp["Fecha"].max(), periods=12, freq="M"),
+            "Temperatura Predicha (°C)": future_temp_pred
+        })
+
+        # 🔹 Graficar predicciones
+        st.plotly_chart(px.line(df_future_temp, x="Fecha", y="Temperatura Predicha (°C)", 
+                                title="📈 Predicción de Temperatura Crítica", markers=True), use_container_width=True)
+        st.write("Este gráfico predice la temperatura crítica en función del uso de CPU y la carga de red.")
+
 
 # 🔹 Nueva Sección: Análisis de Datos
 st.header("📊 Análisis de Datos")
