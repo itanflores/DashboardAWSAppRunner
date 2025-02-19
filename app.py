@@ -70,6 +70,7 @@ if df_filtrado.empty:
 # 💫 Generar Datos de Estado
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
 total_counts.columns = ["Estado", "Cantidad"]
+
 # 💫 Generar Datos de Estado Agrupados
 df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_index(name="Cantidad")
 
