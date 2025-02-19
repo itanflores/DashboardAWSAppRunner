@@ -104,16 +104,16 @@ with col2:
         st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
 
         # 📊 Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
-    st.plotly_chart(px.scatter(
-        df_filtrado,
-        x="Uso CPU (%)",
-        y="Temperatura (°C)",
-        color="Estado del Sistema",
-        title="📊 Relación entre Uso de CPU y Temperatura",
-        labels={"Uso CPU (%)": "Uso de CPU (%)", "Temperatura (°C)": "Temperatura (°C)"},
-        hover_name="Estado del Sistema"
-    ), use_container_width=True)
-    st.write("Este gráfico muestra la relación entre el uso de CPU y la temperatura, permitiendo identificar patrones y anomalías.")
+        st.plotly_chart(px.scatter(
+            df_filtrado,
+            x="Uso CPU (%)",
+            y="Temperatura (°C)",
+            color="Estado del Sistema",
+            title="📊 Relación entre Uso de CPU y Temperatura",
+            labels={"Uso CPU (%)": "Uso de CPU (%)", "Temperatura (°C)": "Temperatura (°C)"},
+            hover_name="Estado del Sistema"
+        ), use_container_width=True)
+        st.write("Este gráfico muestra la relación entre el uso de CPU y la temperatura, permitiendo identificar patrones y anomalías.")
     
 # 🔹 Sección 2: Sección de Pronósticos
 st.header("📈 Sección de Pronósticos")
