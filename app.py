@@ -37,9 +37,15 @@ if not os.path.exists(LOCAL_FILE):
         st.stop()
 
 # 📌 Leer dataset
-df = pd.read_csv(LOCAL_FILE)
-df.columns = df.columns.str.strip()
-df['Fecha'] = pd.to_datetime(df['Fecha'], errors="coerce")
+# 📌 Leer dataset con manejo de errores
+try:
+    df = pd.read_csv(LOCAL_FILE)
+    df.columns = df.columns.str.strip()
+    df['Fecha'] = pd.to_datetime(df['Fecha'], errors="coerce")
+except Exception as e:
+    st.error(f"❌ Error al leer el dataset: {e}")
+    st.stop()
+
 
 # 📌 Configuración de Streamlit en App Runner
 if __name__ == "__main__":
@@ -48,6 +54,12 @@ if __name__ == "__main__":
 # 📌 Filtros
 estados_seleccionados = st.multiselect("Selecciona uno o más Estados:", df["Estado del Sistema"].unique(), default=df["Estado del Sistema"].unique())
 df_filtrado = df[df["Estado del Sistema"].isin(estados_seleccionados)]
+
+# ⚠️ Manejo de datos vacíos
+if df_filtrado.empty:
+    st.warning("⚠️ No hay datos disponibles para los filtros seleccionados.")
+    st.stop()
+
 
 # 💫 Generar Datos de Estado
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
