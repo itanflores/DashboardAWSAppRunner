@@ -1,0 +1,15 @@
+streamlit
+boto3
+pandas
+numpy
+plotly
+matplotlib
+seaborn
+scikit-learn
+xgboost
+requests
+datetime
+configparser
+joblib
+gunicorn
+watchdog
