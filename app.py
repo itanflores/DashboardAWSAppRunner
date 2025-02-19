@@ -32,7 +32,6 @@ if not os.path.exists(LOCAL_FILE):
         st.error(f"❌ Error: No se pudo descargar el dataset desde S3. Detalle: {e}")
         st.stop()
 
-# 📌 Leer dataset
 # 📌 Leer dataset con manejo de errores# 📌 Leer dataset con manejo de errores y validación de columnas
 try:
     df = pd.read_csv(LOCAL_FILE)
@@ -169,26 +168,33 @@ if "Uso CPU (%)" in df_filtrado.columns and "Temperatura (°C)" in df_filtrado.c
 # 🔹 Nueva Sección: Análisis de Datos
 st.header("📊 Análisis de Datos")
 
-# Calcular la matriz de correlación
+# 📊 Matriz de Correlación entre Variables
 st.subheader("📊 Matriz de Correlación entre Variables")
-corr_matrix = df_filtrado[["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)", "Temperatura (°C)"]].corr()
 
-# Mostrar la matriz de correlación como un heatmap
-fig_corr = px.imshow(
-    corr_matrix,
-    labels=dict(x="Variable", y="Variable", color="Correlación"),
-    x=corr_matrix.columns,
-    y=corr_matrix.columns,
-    color_continuous_scale="Viridis",
-    title="Matriz de Correlación entre Variables"
-)
-st.plotly_chart(fig_corr, use_container_width=True)
-st.write("""
-Este gráfico muestra la matriz de correlación entre las variables del sistema. 
-- Un valor cercano a **1** indica una correlación positiva fuerte.
-- Un valor cercano a **-1** indica una correlación negativa fuerte.
-- Un valor cercano a **0** indica que no hay correlación.
-""")
+required_columns_corr = ["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)", "Temperatura (°C)"]
+
+if df_filtrado.empty or not all(col in df_filtrado.columns for col in required_columns_corr):
+    st.warning("⚠️ No hay suficientes datos para calcular la matriz de correlación.")
+else:
+    # Calcular la matriz de correlación
+    corr_matrix = df_filtrado[required_columns_corr].corr()
+
+    # Mostrar la matriz de correlación como un heatmap
+    fig_corr = px.imshow(
+        corr_matrix,
+        labels=dict(x="Variable", y="Variable", color="Correlación"),
+        x=corr_matrix.columns,
+        y=corr_matrix.columns,
+        color_continuous_scale="Viridis",
+        title="Matriz de Correlación entre Variables"
+    )
+    st.plotly_chart(fig_corr, use_container_width=True)
+    st.write("""
+    Este gráfico muestra la matriz de correlación entre las variables del sistema. 
+    - Un valor cercano a **1** indica una correlación positiva fuerte.
+    - Un valor cercano a **-1** indica una correlación negativa fuerte.
+    - Un valor cercano a **0** indica que no hay correlación.
+    """)
 
 # 🔹 Sección 3: Análisis de Outliers y Eficiencia Térmica
 st.header("📊 Análisis de Outliers y Eficiencia Térmica")
