@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 import os
 import boto3
