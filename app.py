@@ -104,8 +104,24 @@ with col1:
     st.plotly_chart(px.bar(df_avg, x="Estado del Sistema", y=["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"], barmode="group", title="📊 Uso de Recursos"), use_container_width=True)
     st.write("Este gráfico compara el uso promedio de CPU, memoria y carga de red según el estado del sistema.")
 with col2:
-    st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
-    st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
+    if df_grouped.empty:
+        st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
+    else:
+        st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
+        st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
+
+    # 📊 Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
+    st.plotly_chart(px.scatter(
+        df_filtrado,
+        x="Uso CPU (%)",
+        y="Temperatura (°C)",
+        color="Estado del Sistema",
+        title="📊 Relación entre Uso de CPU y Temperatura",
+        labels={"Uso CPU (%)": "Uso de CPU (%)", "Temperatura (°C)": "Temperatura (°C)"},
+        hover_name="Estado del Sistema"
+    ), use_container_width=True)
+    st.write("Este gráfico muestra la relación entre el uso de CPU y la temperatura, permitiendo identificar patrones y anomalías.")
+
    
     # Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
     st.plotly_chart(px.scatter(
