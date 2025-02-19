@@ -90,13 +90,6 @@ kpi2.metric("Advertencia", total_counts.loc[total_counts["Estado"] == "Advertenc
 kpi3.metric("Normal", total_counts.loc[total_counts["Estado"] == "Normal", "Cantidad"].values[0] if "Normal" in total_counts["Estado"].values else 0)
 kpi4.metric("Inactivo", total_counts.loc[total_counts["Estado"] == "Inactivo", "Cantidad"].values[0] if "Inactivo" in total_counts["Estado"].values else 0)
 
-# 📌 Verificar si df_grouped tiene datos antes de graficar
-if df_grouped.empty:
-    st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
-else:
-    st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", 
-                            title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
-
 col1, col2 = st.columns(2)
 with col1:
     st.plotly_chart(px.pie(total_counts, values="Cantidad", names="Estado", title="📊 Distribución de Estados"), use_container_width=True)
