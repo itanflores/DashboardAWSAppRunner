@@ -90,17 +90,20 @@ kpi2.metric("Advertencia", total_counts.loc[total_counts["Estado"] == "Advertenc
 kpi3.metric("Normal", total_counts.loc[total_counts["Estado"] == "Normal", "Cantidad"].values[0] if "Normal" in total_counts["Estado"].values else 0)
 kpi4.metric("Inactivo", total_counts.loc[total_counts["Estado"] == "Inactivo", "Cantidad"].values[0] if "Inactivo" in total_counts["Estado"].values else 0)
 
-col1, col2 = st.columns(2)
-with col1:
-    st.plotly_chart(px.pie(total_counts, values="Cantidad", names="Estado", title="📊 Distribución de Estados"), use_container_width=True)
-    st.write("Este gráfico muestra la proporción de cada estado del sistema en el dataset. Útil para identificar tendencias y anomalías.")
-    st.plotly_chart(px.bar(df_avg, x="Estado del Sistema", y=["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"], barmode="group", title="📊 Uso de Recursos"), use_container_width=True)
-    st.write("Este gráfico compara el uso promedio de CPU, memoria y carga de red según el estado del sistema.")
-with col2:
-    if df_grouped.empty:
-        st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
-    else:
-        st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
+# ⚠️ Verificar si hay datos antes de asignar columnas
+if df_grouped.empty:
+    st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
+else:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(px.pie(total_counts, values="Cantidad", names="Estado", title="📊 Distribución de Estados"), use_container_width=True)
+        st.write("Este gráfico muestra la proporción de cada estado del sistema en el dataset. Útil para identificar tendencias y anomalías.")
+        st.plotly_chart(px.bar(df_avg, x="Estado del Sistema", y=["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"], 
+                               barmode="group", title="📊 Uso de Recursos"), use_container_width=True)
+        st.write("Este gráfico compara el uso promedio de CPU, memoria y carga de red según el estado del sistema.")
+    with col2:
+        st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", 
+                                title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
         st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
 
         # 📊 Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
