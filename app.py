@@ -70,7 +70,6 @@ if df_filtrado.empty:
 # 💫 Generar Datos de Estado
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
 total_counts.columns = ["Estado", "Cantidad"]
-df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_index(name="Cantidad")
 
 # ⚠️ Verificar si la columna "Cantidad_Suavizada" existe antes de continuar
 try:
