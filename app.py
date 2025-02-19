@@ -90,6 +90,13 @@ kpi2.metric("Advertencia", total_counts.loc[total_counts["Estado"] == "Advertenc
 kpi3.metric("Normal", total_counts.loc[total_counts["Estado"] == "Normal", "Cantidad"].values[0] if "Normal" in total_counts["Estado"].values else 0)
 kpi4.metric("Inactivo", total_counts.loc[total_counts["Estado"] == "Inactivo", "Cantidad"].values[0] if "Inactivo" in total_counts["Estado"].values else 0)
 
+# 📌 Verificar si df_grouped tiene datos antes de graficar
+if df_grouped.empty:
+    st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
+else:
+    st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", 
+                            title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
+
 col1, col2 = st.columns(2)
 with col1:
     st.plotly_chart(px.pie(total_counts, values="Cantidad", names="Estado", title="📊 Distribución de Estados"), use_container_width=True)
@@ -99,14 +106,7 @@ with col1:
 with col2:
     st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
     st.write("Este gráfico representa la evolución temporal de los estados del sistema, permitiendo visualizar patrones y tendencias a lo largo del tiempo.")
-
-    # 📌 Verificar si df_grouped tiene datos antes de graficar
-if df_grouped.empty:
-    st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
-else:
-    # Este bloque ya existe en col2, así que lo eliminamos de aquí.
-    pass
-    
+   
     # Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
     st.plotly_chart(px.scatter(
         df_filtrado,
