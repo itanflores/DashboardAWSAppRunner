@@ -70,6 +70,8 @@ if df_filtrado.empty:
 # 💫 Generar Datos de Estado
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
 total_counts.columns = ["Estado", "Cantidad"]
+# 💫 Generar Datos de Estado Agrupados
+df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_index(name="Cantidad")
 
 # ⚠️ Verificar si la columna "Cantidad_Suavizada" existe antes de continuar
 try:
@@ -80,7 +82,11 @@ except Exception as e:
     st.error(f"❌ Error al calcular 'Cantidad_Suavizada': {e}")
     st.stop()
 
-df_avg = df_filtrado.groupby("Estado del Sistema")[["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"]].mean().reset_index()
+try:
+    df_avg = df_filtrado.groupby("Estado del Sistema")[["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"]].mean().reset_index()
+except KeyError as e:
+    st.error(f"❌ Error: Faltan columnas en el dataset. Detalle: {e}")
+    st.stop()
 
 # 🔹 Sección 1: Estado Actual
 st.header("📌 Estado Actual")
