@@ -75,8 +75,12 @@ df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_i
 df_grouped["Cantidad_Suavizada"] = df_grouped.groupby("Estado del Sistema")["Cantidad"].transform(lambda x: x.rolling(7, min_periods=1).mean())
 
 # ⚠️ Verificar si la columna "Cantidad_Suavizada" existe antes de continuar
-if "Cantidad_Suavizada" not in df_grouped.columns:
-    st.error("❌ Error: La columna 'Cantidad_Suavizada' no está disponible en los datos procesados. Verifica que los cálculos sean correctos.")
+try:
+    df_grouped["Cantidad_Suavizada"] = df_grouped.groupby("Estado del Sistema")["Cantidad"].transform(
+        lambda x: x.rolling(7, min_periods=1).mean()
+    )
+except Exception as e:
+    st.error(f"❌ Error al calcular 'Cantidad_Suavizada': {e}")
     st.stop()
 
 df_avg = df_filtrado.groupby("Estado del Sistema")[["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"]].mean().reset_index()
