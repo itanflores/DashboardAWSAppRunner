@@ -39,7 +39,7 @@ if not os.path.exists(LOCAL_FILE):
 # 📌 Leer dataset
 df = pd.read_csv(LOCAL_FILE)
 df.columns = df.columns.str.strip()
-df['Fecha'] = pd.to_datetime(df['Fecha'])
+df['Fecha'] = pd.to_datetime(df['Fecha'], errors="coerce")
 
 # 📌 Configuración de Streamlit en App Runner
 if __name__ == "__main__":
