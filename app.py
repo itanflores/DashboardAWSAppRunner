@@ -9,7 +9,6 @@ import boto3
 
 # Desactivar protección CSRF en Streamlit para permitir conexiones externas
 st.set_option("server.enableCORS", False)
-st.set_option("server.enableXsrfProtection", False)
 
 # 🛠️ Configurar la página
 st.set_page_config(page_title=" Tablero de Monitoreo en Streamlit para la Gestión de Infraestructura TI", page_icon="📊", layout="wide")
@@ -194,19 +193,14 @@ Este gráfico muestra la matriz de correlación entre las variables del sistema.
 - Un valor cercano a **0** indica que no hay correlación.
 """)
 
-# 🔹 Sección 3: Análisis de Outliers y Eficiencia Térmica
+# 📌 Sección 3: Análisis de Outliers y Eficiencia Térmica
 st.header("📊 Análisis de Outliers y Eficiencia Térmica")
 
-# Calcular métricas
-uso_promedio_cpu = df_filtrado["Uso CPU (%)"].mean()
-temperatura_media = df_filtrado["Temperatura (°C)"].mean()
-eficiencia_termica = uso_promedio_cpu / temperatura_media if temperatura_media != 0 else 0
-
-# Mostrar métricas en columnas
+# Mostrar métricas en columnas sin crear variables innecesarias
 col1, col2, col3 = st.columns(3)
-col1.metric("Uso Promedio de CPU (%)", f"{uso_promedio_cpu:.2f}")
-col2.metric("Temperatura Media (°C)", f"{temperatura_media:.2f}")
-col3.metric("Eficiencia Térmica", f"{eficiencia_termica:.2f}")
+col1.metric("Uso Promedio de CPU (%)", f"{df_filtrado['Uso CPU (%)'].mean():.2f}")
+col2.metric("Temperatura Media (°C)", f"{df_filtrado['Temperatura (°C)'].mean():.2f}")
+col3.metric("Eficiencia Térmica", f"{df_filtrado['Uso CPU (%)'].mean() / df_filtrado['Temperatura (°C)'].mean() if df_filtrado['Temperatura (°C)'].mean() != 0 else 0:.2f}")
 
 # Crear el Boxplot para Uso de CPU y Temperatura
 st.subheader("📊 Distribución de Outliers (Boxplot)")
