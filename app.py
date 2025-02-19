@@ -7,9 +7,6 @@ from sklearn.ensemble import RandomForestRegressor
 import os
 import boto3
 
-# Desactivar protección CSRF en Streamlit para permitir conexiones externas
-st.set_option("server.enableCORS", False)
-
 # 🛠️ Configurar la página
 st.set_page_config(page_title=" Tablero de Monitoreo en Streamlit para la Gestión de Infraestructura TI", page_icon="📊", layout="wide")
 
@@ -70,8 +67,8 @@ if df_filtrado.empty:
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
 total_counts.columns = ["Estado", "Cantidad"]
 
-# 💫 Generar Datos de Estado Agrupados
-df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_index(name="Cantidad")
+# 💫 Generar Datos de Estado Agrupados (con frecuencia diaria)
+df_grouped = df_filtrado.groupby([pd.Grouper(key='Fecha', freq='D'), "Estado del Sistema"]).size().reset_index(name="Cantidad")
 
 # ⚠️ Verificar si la columna "Cantidad_Suavizada" existe antes de continuar
 try:
@@ -193,14 +190,18 @@ Este gráfico muestra la matriz de correlación entre las variables del sistema.
 - Un valor cercano a **0** indica que no hay correlación.
 """)
 
-# 📌 Sección 3: Análisis de Outliers y Eficiencia Térmica
+# 🔹 Sección 3: Análisis de Outliers y Eficiencia Térmica
 st.header("📊 Análisis de Outliers y Eficiencia Térmica")
 
-# Mostrar métricas en columnas sin crear variables innecesarias
+# Evitar división por cero al calcular eficiencia térmica
+uso_promedio_cpu = df_filtrado["Uso CPU (%)"].mean()
+temperatura_media = df_filtrado["Temperatura (°C)"].mean()
+eficiencia_termica = uso_promedio_cpu / temperatura_media if temperatura_media > 0 else 0
+
 col1, col2, col3 = st.columns(3)
-col1.metric("Uso Promedio de CPU (%)", f"{df_filtrado['Uso CPU (%)'].mean():.2f}")
-col2.metric("Temperatura Media (°C)", f"{df_filtrado['Temperatura (°C)'].mean():.2f}")
-col3.metric("Eficiencia Térmica", f"{df_filtrado['Uso CPU (%)'].mean() / df_filtrado['Temperatura (°C)'].mean() if df_filtrado['Temperatura (°C)'].mean() != 0 else 0:.2f}")
+col1.metric("Uso Promedio de CPU (%)", f"{uso_promedio_cpu:.2f}")
+col2.metric("Temperatura Media (°C)", f"{temperatura_media:.2f}")
+col3.metric("Eficiencia Térmica", f"{eficiencia_termica:.2f}")
 
 # Crear el Boxplot para Uso de CPU y Temperatura
 st.subheader("📊 Distribución de Outliers (Boxplot)")
