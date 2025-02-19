@@ -68,13 +68,17 @@ if df_filtrado.empty:
     st.warning("⚠️ No hay datos disponibles para los filtros seleccionados.")
     st.stop()
 
-
 # 💫 Generar Datos de Estado
 total_counts = df_filtrado["Estado del Sistema"].value_counts().reset_index()
 total_counts.columns = ["Estado", "Cantidad"]
 
 df_grouped = df_filtrado.groupby(["Fecha", "Estado del Sistema"]).size().reset_index(name="Cantidad")
 df_grouped["Cantidad_Suavizada"] = df_grouped.groupby("Estado del Sistema")["Cantidad"].transform(lambda x: x.rolling(7, min_periods=1).mean())
+
+# ⚠️ Verificar si la columna "Cantidad_Suavizada" existe antes de continuar
+if "Cantidad_Suavizada" not in df_grouped.columns:
+    st.error("❌ Error: La columna 'Cantidad_Suavizada' no está disponible en los datos procesados. Verifica que los cálculos sean correctos.")
+    st.stop()
 
 df_avg = df_filtrado.groupby("Estado del Sistema")[["Uso CPU (%)", "Memoria Utilizada (%)", "Carga de Red (MB/s)"]].mean().reset_index()
 
@@ -100,8 +104,8 @@ with col2:
 if df_grouped.empty:
     st.warning("⚠️ No hay datos disponibles después de aplicar los filtros.")
 else:
-    st.plotly_chart(px.line(df_grouped, x="Fecha", y="Cantidad_Suavizada", 
-                            color="Estado del Sistema", title="📈 Evolución en el Tiempo", markers=True), use_container_width=True)
+    # Este bloque ya existe en col2, así que lo eliminamos de aquí.
+    pass
     
     # Gráfico de dispersión: Relación entre Uso de CPU y Temperatura
     st.plotly_chart(px.scatter(
@@ -118,52 +122,46 @@ else:
 # 🔹 Sección 2: Sección de Pronósticos
 st.header("📈 Sección de Pronósticos")
 
-# 📌 Predicción de Estados del Sistema con Regresión Lineal
-st.subheader("📈 Predicción de Estados del Sistema")
-pred_horizonte = 12
-predicciones = []
+# 📌 Predicción de Temperatura Crítica con normalización de datos
+st.subheader("🌡️ Predicción de Temperatura Crítica")
 
-for estado in df_grouped["Estado del Sistema"].unique():
-    df_estado = df_grouped[df_grouped["Estado del Sistema"] == estado].copy()
-    df_estado = df_estado.dropna(subset=["Cantidad_Suavizada"])
+if "Uso CPU (%)" in df_filtrado.columns and "Temperatura (°C)" in df_filtrado.columns:
+    df_temp = df_filtrado[["Fecha", "Uso CPU (%)", "Carga de Red (MB/s)", "Temperatura (°C)"]].dropna()
 
-    # ⚠️ Verificar si hay suficientes datos para predecir
-    if len(df_estado) < 5:
-        st.warning(f"⚠️ No hay suficientes datos para predecir el estado '{estado}'. Se necesitan al menos 5 registros.")
-        continue  # Saltar este estado y pasar al siguiente
+    # ⚠️ Verificar que haya datos suficientes
+    if df_temp.shape[0] < 10:
+        st.warning("⚠️ No hay suficientes datos para predecir la temperatura crítica.")
+    else:
+        X = df_temp[["Uso CPU (%)", "Carga de Red (MB/s)"]]
+        y = df_temp["Temperatura (°C)"]
 
-    # 🔹 Preparar los datos para la regresión lineal
-    X = np.arange(len(df_estado)).reshape(-1, 1)
-    y = df_estado["Cantidad_Suavizada"].values
-    model = LinearRegression()
-    model.fit(X, y)
+        # 🔹 Normalizar datos
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
 
-    # 🔹 Generar predicciones para el futuro
-    future_dates = pd.date_range(start=df_estado["Fecha"].max(), periods=pred_horizonte, freq="M")
-    X_future = np.arange(len(df_estado), len(df_estado) + pred_horizonte).reshape(-1, 1)
-    y_pred = model.predict(X_future)
+        # 🔹 Entrenar modelo
+        model_temp = RandomForestRegressor(n_estimators=100, random_state=42)
+        model_temp.fit(X_scaled, y)
 
-    # 🔹 Crear DataFrame con predicciones
-    df_pred = pd.DataFrame({
-        "Fecha": future_dates,
-        "Estado del Sistema": estado,
-        "Cantidad_Suavizada": y_pred
-    })
-    predicciones.append(df_pred)
+        # 🔹 Generar nuevos valores de CPU y Carga de Red en un DataFrame
+        future_data = pd.DataFrame({
+            "Uso CPU (%)": np.linspace(X["Uso CPU (%)"].min(), X["Uso CPU (%)"].max(), num=12),
+            "Carga de Red (MB/s)": np.linspace(X["Carga de Red (MB/s)"].min(), X["Carga de Red (MB/s)"].max(), num=12)
+        })
 
-# 📌 Combinar datos originales y predicciones
-if predicciones:
-    df_pred_final = pd.concat([df_grouped] + predicciones, ignore_index=True)
+        # 🔹 Transformar datos futuros con el mismo `StandardScaler`
+        future_data_scaled = scaler.transform(future_data)
+        future_temp_pred = model_temp.predict(future_data_scaled)
 
-    # 🔹 Graficar predicciones
-    st.plotly_chart(
-        px.line(df_pred_final, x="Fecha", y="Cantidad_Suavizada", color="Estado del Sistema", 
-                title="📈 Predicción de Estados del Sistema", markers=True),
-        use_container_width=True
-    )
-    st.write("Este gráfico presenta la predicción de la cantidad de eventos por estado del sistema en los próximos meses.")
-else:
-    st.warning("⚠️ No hay suficientes datos en ninguno de los estados para generar predicciones.")
+        df_future_temp = pd.DataFrame({
+            "Fecha": pd.date_range(start=df_temp["Fecha"].max(), periods=12, freq="M"),
+            "Temperatura Predicha (°C)": future_temp_pred
+        })
+
+        # 🔹 Graficar predicciones
+        st.plotly_chart(px.line(df_future_temp, x="Fecha", y="Temperatura Predicha (°C)", 
+                                title="📈 Predicción de Temperatura Crítica", markers=True), use_container_width=True)
+        st.write("Este gráfico predice la temperatura crítica en función del uso de CPU y la carga de red.")
 
 # 📌 Predicción de Temperatura Crítica con normalización de datos
 st.subheader("🌡️ Predicción de Temperatura Crítica")
